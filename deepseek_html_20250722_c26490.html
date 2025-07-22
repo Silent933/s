@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدير بوتات Discord</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button.stop {
+            background-color: #f44336;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .active {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .inactive {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>مدير بوتات Discord</h1>
+        
+        <div class="form-group">
+            <label for="token">توكن البوت:</label>
+            <input type="password" id="token" placeholder="أدخل توكن البوت">
+        </div>
+        
+        <div class="form-group">
+            <label for="serverId">معرف السيرفر:</label>
+            <input type="text" id="serverId" placeholder="أدخل معرف السيرفر">
+        </div>
+        
+        <div class="form-group">
+            <label for="roomId">معرف الروم:</label>
+            <input type="text" id="roomId" placeholder="أدخل معرف الروم">
+        </div>
+        
+        <button id="startBtn">تشغيل البوت</button>
+        <button id="stopBtn" class="stop">إيقاف البوت</button>
+        
+        <div id="status" class="status inactive">الحالة: غير نشط</div>
+    </div>
+
+    <script>
+        // مفتاح التشفير (يجب أن يكون معقدًا في الإنتاج)
+        const ENCRYPTION_KEY = 'a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8'; // 32 حرفًا لـ AES-256
+        
+        // عناصر الواجهة
+        const tokenInput = document.getElementById('token');
+        const serverIdInput = document.getElementById('serverId');
+        const roomIdInput = document.getElementById('roomId');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDiv = document.getElementById('status');
+        
+        // حالة البوت
+        let botActive = false;
+        
+        // تحميل الإعدادات المحفوظة
+        async function loadSettings() {
+            try {
+                const encryptedData = localStorage.getItem('discordBotSettings');
+                if (encryptedData) {
+                    const decryptedData = await decryptData(encryptedData);
+                    const settings = JSON.parse(decryptedData);
+                    
+                    tokenInput.value = settings.token;
+                    serverIdInput.value = settings.serverId;
+                    roomIdInput.value = settings.roomId;
+                    botActive = settings.active || false;
+                    
+                    updateStatus();
+                    
+                    if (botActive) {
+                        startBot(settings.token, settings.serverId, settings.roomId);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+        
+        // حفظ الإعدادات
+        async function saveSettings() {
+            const settings = {
+                token: tokenInput.value,
+                serverId: serverIdInput.value,
+                roomId: roomIdInput.value,
+                active: botActive
+            };
+            
+            try {
+                const encryptedData = await encryptData(JSON.stringify(settings));
+                localStorage.setItem('discordBotSettings', encryptedData);
+            } catch (error) {
+                console.error('Error saving settings:', error);
+            }
+        }
+        
+        // تشغيل البوت
+        function startBot(token, serverId, roomId) {
+            // هنا يتم الاتصال بخادم البوت أو تنفيذ العمليات المطلوبة
+            console.log('Starting bot with:', {token, serverId, roomId});
+            
+            // في الواقع، هنا ستقوم بإرسال هذه البيانات إلى خادم البوت
+            // أو تنفيذ الكود اللازم لتشغيل البوت
+            
+            botActive = true;
+            updateStatus();
+            saveSettings();
+        }
+        
+        // إيقاف البوت
+        function stopBot() {
+            // هنا يتم إيقاف البوت
+            console.log('Stopping bot');
+            
+            botActive = false;
+            updateStatus();
+            saveSettings();
+        }
+        
+        // تحديث حالة الواجهة
+        function updateStatus() {
+            if (botActive) {
+                statusDiv.textContent = 'الحالة: نشط';
+                statusDiv.className = 'status active';
+            } else {
+                statusDiv.textContent = 'الحالة: غير نشط';
+                statusDiv.className = 'status inactive';
+            }
+        }
+        
+        // أحداث الأزرار
+        startBtn.addEventListener('click', () => {
+            if (!tokenInput.value || !serverIdInput.value || !roomIdInput.value) {
+                alert('الرجاء إدخال جميع البيانات المطلوبة');
+                return;
+            }
+            
+            startBot(tokenInput.value, serverIdInput.value, roomIdInput.value);
+        });
+        
+        stopBtn.addEventListener('click', stopBot);
+        
+        // حفظ التلقائي عند التغيير
+        tokenInput.addEventListener('change', saveSettings);
+        serverIdInput.addEventListener('change', saveSettings);
+        roomIdInput.addEventListener('change', saveSettings);
+        
+        // وظائف التشفير
+        async function encryptData(data) {
+            try {
+                const iv = crypto.getRandomValues(new Uint8Array(16));
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    new TextEncoder().encode(ENCRYPTION_KEY),
+                    { name: 'AES-CBC' },
+                    false,
+                    ['encrypt']
+                );
+                
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-CBC', iv },
+                    key,
+                    new TextEncoder().encode(data)
+                );
+                
+                // دمج IV مع البيانات المشفرة
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv, 0);
+                combined.set(new Uint8Array(encrypted), iv.length);
+                
+                return btoa(String.fromCharCode.apply(null, combined));
+            } catch (error) {
+                console.error('Encryption error:', error);
+                throw error;
+            }
+        }
+        
+        async function decryptData(encryptedData) {
+            try {
+                const combined = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+                const iv = combined.slice(0, 16);
+                const data = combined.slice(16);
+                
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    new TextEncoder().encode(ENCRYPTION_KEY),
+                    { name: 'AES-CBC' },
+                    false,
+                    ['decrypt']
+                );
+                
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-CBC', iv },
+                    key,
+                    data
+                );
+                
+                return new TextDecoder().decode(decrypted);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                throw error;
+            }
+        }
+        
+        // تحميل الإعدادات عند بدء التشغيل
+        document.addEventListener('DOMContentLoaded', loadSettings);
+        
+        // التأكد من استمرارية التشغيل حتى عند إغلاق الصفحة
+        window.addEventListener('beforeunload', () => {
+            if (botActive) {
+                // يمكنك هنا إرسال طلب إلى الخادم للحفاظ على التشغيل
+                console.log('Keeping bot running in background');
+            }
+        });
+    </script>
+</body>
+</html>
